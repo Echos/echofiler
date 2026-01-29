@@ -1,0 +1,66 @@
+# echofiler デフォルト設定ファイル
+
+[general]
+# 隠しファイルを表示するか
+show_hidden = false
+
+# 削除時に確認するか
+confirm_delete = true
+
+# 上書き時に確認するか
+confirm_overwrite = true
+
+# ゴミ箱を使用するか（未実装）
+use_trash = false
+
+# ファイル/ディレクトリアイコンを表示するか
+show_icons = false
+
+# アイコンスタイル: "nerd-fonts" | "emoji" | "ascii"
+# nerd-fonts: Nerd Fonts (1文字幅、推奨)
+# emoji: 絵文字 (2文字幅、表示がずれる可能性あり)
+# ascii: ASCII文字 (1文字幅)
+icon_style = "nerd-fonts"
+
+# アイコン後のスペース数 (0-9)
+icon_spacing = 1
+
+[layout]
+# レイアウトスタイル: "dual" | "miller" | "single"
+style = "dual"
+
+# 左右ペインの比率 [左, 右]
+ratio = [1, 1]
+
+# プレビューを表示するか
+show_preview = false
+
+# プレビューの比率（未実装）
+preview_ratio = 3
+
+[sort]
+# ソート方法: "natural" | "name" | "size" | "mtime" | "extension"
+method = "natural"
+
+# ディレクトリを最初に表示するか
+directories_first = true
+
+# 逆順にソートするか
+reverse = false
+
+[preview]
+# プレビュー最大サイズ
+max_size = "10MB"
+
+# シンタックスハイライトを使用するか
+syntax_highlight = true
+
+# 画像プロトコル: "auto" | "sixel" | "kitty" | "iterm" | "halfblocks"
+image_protocol = "auto"
+
+[log]
+# ログレベル: "trace" | "debug" | "info" | "warn" | "error"
+level = "info"
+
+# ログファイルのパス
+file = "~/.local/share/echofiler/echofiler.log"

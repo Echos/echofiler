@@ -1,0 +1,73 @@
+# echofiler ファイルオープナー設定
+
+# デフォルトのオープナーコマンド
+# Linux: xdg-open, macOS: open, Windows: start
+default = "xdg-open"
+
+# エディタコマンド（環境変数$EDITORが優先される）
+editor = "vi"
+
+# ページャコマンド（環境変数$PAGERが優先される）
+pager = "less"
+
+# 拡張子ごとのカスタムオープナー
+[extension]
+# テキストファイル
+txt = "vi"
+md = "vi"
+log = "less"
+
+# プログラミング言語
+rs = "vi"
+py = "vi"
+js = "vi"
+c = "vi"
+cpp = "vi"
+h = "vi"
+
+# 設定ファイル
+toml = "vi"
+yaml = "vi"
+yml = "vi"
+json = "vi"
+xml = "vi"
+ini = "vi"
+
+# 画像ファイル
+png = "xdg-open"
+jpg = "xdg-open"
+jpeg = "xdg-open"
+gif = "xdg-open"
+bmp = "xdg-open"
+webp = "xdg-open"
+
+# ドキュメント
+pdf = "xdg-open"
+doc = "xdg-open"
+docx = "xdg-open"
+odt = "xdg-open"
+
+# スプレッドシート
+xls = "xdg-open"
+xlsx = "xdg-open"
+ods = "xdg-open"
+csv = "vi"
+
+# 動画・音声
+mp4 = "xdg-open"
+avi = "xdg-open"
+mkv = "xdg-open"
+mp3 = "xdg-open"
+wav = "xdg-open"
+flac = "xdg-open"
+
+# アーカイブ（内部で展開処理するため、通常は開かない）
+# zip = "xdg-open"
+# tar = "xdg-open"
+# gz = "xdg-open"
+
+# MIMEタイプごとのカスタムオープナー（オプション）
+[mime]
+# "text/plain" = "vi"
+# "image/png" = "feh"
+# "application/pdf" = "zathura"

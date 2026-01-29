@@ -1,0 +1,33 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local config
+config/local/
+
+# Runtime
+.echofiler/
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Added by cargo
+
+/target

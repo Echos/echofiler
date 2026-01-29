@@ -1,0 +1,43 @@
+# echofiler テーマ設定
+
+[colors]
+background = "default"
+foreground = "white"
+
+[file]
+# ディレクトリ
+directory = { fg = "blue", modifiers = ["bold"] }
+
+# 実行ファイル
+executable = { fg = "green", modifiers = ["bold"] }
+
+# シンボリックリンク
+symlink = { fg = "cyan" }
+
+# 壊れたシンボリックリンク
+broken_symlink = { fg = "red" }
+
+# 隠しファイル
+hidden = { fg = "gray" }
+
+# アーカイブ
+archive = { fg = "magenta" }
+
+# 画像
+image = { fg = "yellow" }
+
+[ui]
+# ボーダー
+border = { fg = "gray" }
+
+# アクティブペインのボーダー
+border_focused = { fg = "blue" }
+
+# カーソル
+cursor = { bg = "blue", fg = "white" }
+
+# 選択
+selection = { bg = "yellow", fg = "black" }
+
+# ステータスライン
+statusline = { bg = "gray", fg = "white" }

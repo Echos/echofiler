@@ -1,0 +1,61 @@
+[package]
+name = "echofiler"
+version = "0.1.0"
+edition = "2021"
+authors = ["echofiler contributors"]
+description = "A dual-pane file manager for the terminal"
+license = "MIT"
+
+[dependencies]
+# TUI
+ratatui = "0.29"
+crossterm = "0.28"
+
+# Async runtime
+tokio = { version = "1.42", features = ["full"] }
+
+# File system
+walkdir = "2.5"
+ignore = "0.4"
+notify = "7.0"
+
+# Config
+toml = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Time
+chrono = "0.4"
+
+# Directories
+dirs = "6.0"
+
+# Unix system calls
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+# Archive (for Phase 6)
+zip = { version = "2.2", optional = true }
+tar = { version = "0.4", optional = true }
+flate2 = { version = "1.0", optional = true }
+
+# Preview (for Phase 6)
+syntect = { version = "5.3", optional = true }
+image = { version = "0.25", optional = true }
+viuer = { version = "0.8", optional = true }
+
+# Plugin system (for Phase 6)
+mlua = { version = "0.10", features = ["luau"], optional = true }
+
+[features]
+default = []
+archive = ["zip", "tar", "flate2"]
+preview = ["syntect", "image", "viuer"]
+plugin = ["mlua"]
