@@ -32,7 +32,7 @@ impl<'a> HelpWidget<'a> {
         )));
         lines.push(Line::from("  j / ↓         Move cursor down"));
         lines.push(Line::from("  k / ↑         Move cursor up"));
-        lines.push(Line::from("  Enter         Enter directory / Open file"));
+        lines.push(Line::from("  Enter         Enter directory / Preview file"));
         lines.push(Line::from("  Backspace     Go to parent directory"));
         lines.push(Line::from(""));
 

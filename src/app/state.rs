@@ -517,11 +517,8 @@ impl App {
                         // ディレクトリの場合は入る
                         self.active_pane_mut().current_tab_mut().enter();
                     } else {
-                        // ファイルの場合は開く
-                        let path = entry.path.clone();
-                        if let Err(e) = crate::fs::opener::open_file(&path, &self.config.opener) {
-                            self.show_error(&format!("Failed to open file:\n{}", e));
-                        }
+                        // ファイルの場合はプレビューモードをON
+                        self.show_preview = true;
                     }
                 }
             }
