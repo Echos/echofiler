@@ -70,13 +70,13 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Res
             // TUIを再開
             *terminal = setup_terminal()?;
 
-            // 結果をステータスメッセージにセット
+            // 結果をメッセージダイアログで表示
             match result {
                 Ok(_) => {
-                    app.status_message = "Command completed.".to_string();
+                    // 成功時はメッセージなし（ファイルが編集されたことは明らか）
                 }
                 Err(e) => {
-                    app.status_message = format!("Error: {}", e);
+                    app.show_error(&format!("Command failed:\n{}", e));
                 }
             }
 

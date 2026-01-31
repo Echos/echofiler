@@ -430,11 +430,23 @@ impl App {
         if let Some(action) = self.pending_action.take() {
             match action {
                 PendingAction::Delete { paths } => {
-                    for path in paths {
-                        let _ = crate::fs::ops::delete_file(&path);
+                    let mut errors = Vec::new();
+                    for path in &paths {
+                        if let Err(e) = crate::fs::ops::delete_file(path) {
+                            errors.push(format!("{}: {}", path.display(), e));
+                        }
                     }
                     self.active_pane_mut().current_tab_mut().clear_selection();
                     self.active_pane_mut().current_tab_mut().reload();
+
+                    if !errors.is_empty() {
+                        let error_msg = if errors.len() == 1 {
+                            format!("Failed to delete file:\n{}", errors[0])
+                        } else {
+                            format!("Failed to delete {} files:\n{}", errors.len(), errors.join("\n"))
+                        };
+                        self.show_error(&error_msg);
+                    }
                 }
                 PendingAction::Paste { .. } => {
                     self.execute_paste();
@@ -446,15 +458,17 @@ impl App {
                         match extract_archive(&archive_path, &dest_dir) {
                             Ok(_) => {
                                 self.active_pane_mut().current_tab_mut().reload();
+                                self.show_message(&format!("Extracted: {}", archive_path.display()));
                             }
                             Err(e) => {
-                                eprintln!("Failed to extract archive: {}", e);
+                                self.show_error(&format!("Failed to extract archive:\n{}", e));
                             }
                         }
                     }
                     #[cfg(not(feature = "archive"))]
                     {
                         let _ = (archive_path, dest_dir);
+                        self.show_error("Archive support requires 'archive' feature");
                     }
                 }
                 PendingAction::CopyToOtherPane { paths, dest_dir } => {
@@ -503,7 +517,7 @@ impl App {
                         // ファイルの場合は開く
                         let path = entry.path.clone();
                         if let Err(e) = crate::fs::opener::open_file(&path, &self.config.opener) {
-                            eprintln!("Failed to open file: {}", e);
+                            self.show_error(&format!("Failed to open file:\n{}", e));
                         }
                     }
                 }
@@ -788,13 +802,16 @@ impl App {
 
     fn execute_paste(&mut self) {
         let dest_dir = self.active_pane().current_tab().cwd.clone();
+        let mut errors = Vec::new();
 
         match &self.clipboard.mode {
             Some(ClipboardMode::Copy) => {
                 for src in &self.clipboard.paths {
                     if let Some(file_name) = src.file_name() {
                         let dest = dest_dir.join(file_name);
-                        let _ = crate::fs::ops::copy_file(src, &dest);
+                        if let Err(e) = crate::fs::ops::copy_file(src, &dest) {
+                            errors.push(format!("{}: {}", src.display(), e));
+                        }
                     }
                 }
             }
@@ -802,7 +819,9 @@ impl App {
                 for src in &self.clipboard.paths {
                     if let Some(file_name) = src.file_name() {
                         let dest = dest_dir.join(file_name);
-                        let _ = crate::fs::ops::move_file(src, &dest);
+                        if let Err(e) = crate::fs::ops::move_file(src, &dest) {
+                            errors.push(format!("{}: {}", src.display(), e));
+                        }
                     }
                 }
                 self.clipboard.clear();
@@ -811,6 +830,15 @@ impl App {
         }
 
         self.active_pane_mut().current_tab_mut().reload();
+
+        if !errors.is_empty() {
+            let error_msg = if errors.len() == 1 {
+                format!("Failed to paste file:\n{}", errors[0])
+            } else {
+                format!("Failed to paste {} files:\n{}", errors.len(), errors.join("\n"))
+            };
+            self.show_error(&error_msg);
+        }
     }
 
     fn copy_to_other_pane(&mut self) {
@@ -820,7 +848,7 @@ impl App {
             if let Some(entry) = tab.current_entry() {
                 vec![entry.path.clone()]
             } else {
-                self.show_message("No file selected".to_string());
+                self.show_message("No file selected");
                 return;
             }
         } else {
@@ -857,14 +885,14 @@ impl App {
 
     fn execute_copy_to_other_pane(&mut self, paths: Vec<PathBuf>, dest_dir: PathBuf) {
         let mut success_count = 0;
-        let mut error_count = 0;
+        let mut errors = Vec::new();
 
         for src in &paths {
             if let Some(file_name) = src.file_name() {
                 let dest = dest_dir.join(file_name);
                 match crate::fs::ops::copy_file(src, &dest) {
                     Ok(_) => success_count += 1,
-                    Err(_) => error_count += 1,
+                    Err(e) => errors.push(format!("{}: {}", src.display(), e)),
                 }
             }
         }
@@ -877,10 +905,16 @@ impl App {
         self.active_pane_mut().current_tab_mut().clear_selection();
 
         // メッセージ表示
-        if error_count == 0 {
-            self.show_message(format!("Copied {} item(s) to other pane", success_count));
+        if errors.is_empty() {
+            self.show_message(&format!("Copied {} item(s) to other pane", success_count));
         } else {
-            self.show_error(format!("Copied {} item(s), {} error(s)", success_count, error_count));
+            let error_msg = format!(
+                "Copied {} item(s), {} error(s):\n{}",
+                success_count,
+                errors.len(),
+                errors.join("\n")
+            );
+            self.show_error(&error_msg);
         }
     }
 
@@ -891,7 +925,7 @@ impl App {
             if let Some(entry) = tab.current_entry() {
                 vec![entry.path.clone()]
             } else {
-                self.show_message("No file selected".to_string());
+                self.show_message("No file selected");
                 return;
             }
         } else {
@@ -928,14 +962,14 @@ impl App {
 
     fn execute_move_to_other_pane(&mut self, paths: Vec<PathBuf>, dest_dir: PathBuf) {
         let mut success_count = 0;
-        let mut error_count = 0;
+        let mut errors = Vec::new();
 
         for src in &paths {
             if let Some(file_name) = src.file_name() {
                 let dest = dest_dir.join(file_name);
                 match crate::fs::ops::move_file(src, &dest) {
                     Ok(_) => success_count += 1,
-                    Err(_) => error_count += 1,
+                    Err(e) => errors.push(format!("{}: {}", src.display(), e)),
                 }
             }
         }
@@ -948,10 +982,16 @@ impl App {
         self.active_pane_mut().current_tab_mut().clear_selection();
 
         // メッセージ表示
-        if error_count == 0 {
-            self.show_message(format!("Moved {} item(s) to other pane", success_count));
+        if errors.is_empty() {
+            self.show_message(&format!("Moved {} item(s) to other pane", success_count));
         } else {
-            self.show_error(format!("Moved {} item(s), {} error(s)", success_count, error_count));
+            let error_msg = format!(
+                "Moved {} item(s), {} error(s):\n{}",
+                success_count,
+                errors.len(),
+                errors.join("\n")
+            );
+            self.show_error(&error_msg);
         }
     }
 
@@ -978,11 +1018,23 @@ impl App {
             self.mode = InputMode::Confirm;
         } else {
             // 確認なしで即実行
-            for path in paths {
-                let _ = crate::fs::ops::delete_file(&path);
+            let mut errors = Vec::new();
+            for path in &paths {
+                if let Err(e) = crate::fs::ops::delete_file(path) {
+                    errors.push(format!("{}: {}", path.display(), e));
+                }
             }
-            tab.clear_selection();
-            tab.reload();
+            self.active_pane_mut().current_tab_mut().clear_selection();
+            self.active_pane_mut().current_tab_mut().reload();
+
+            if !errors.is_empty() {
+                let error_msg = if errors.len() == 1 {
+                    format!("Failed to delete file:\n{}", errors[0])
+                } else {
+                    format!("Failed to delete {} files:\n{}", errors.len(), errors.join("\n"))
+                };
+                self.show_error(&error_msg);
+            }
         }
     }
 
@@ -1099,9 +1151,10 @@ impl App {
                     match extract_archive(&archive_path, &dest_dir) {
                         Ok(_) => {
                             self.active_pane_mut().current_tab_mut().reload();
+                            self.show_message(&format!("Extracted: {}", archive_path.display()));
                         }
                         Err(e) => {
-                            eprintln!("Failed to extract archive: {}", e);
+                            self.show_error(&format!("Failed to extract archive:\n{}", e));
                         }
                     }
                 }
@@ -1111,7 +1164,7 @@ impl App {
 
     #[cfg(not(feature = "archive"))]
     fn extract_archive(&mut self) {
-        eprintln!("Archive support requires 'archive' feature");
+        self.show_error("Archive support requires 'archive' feature");
     }
 
     #[cfg(feature = "archive")]
@@ -1139,16 +1192,17 @@ impl App {
             Ok(_) => {
                 tab.clear_selection();
                 tab.reload();
+                self.show_message(&format!("Compressed to: {}", output_path.display()));
             }
             Err(e) => {
-                eprintln!("Failed to compress files: {}", e);
+                self.show_error(&format!("Failed to compress files:\n{}", e));
             }
         }
     }
 
     #[cfg(not(feature = "archive"))]
     fn compress_to_zip(&mut self) {
-        eprintln!("Archive support requires 'archive' feature");
+        self.show_error("Archive support requires 'archive' feature");
     }
 
     fn open_current_file(&mut self) {
@@ -1158,14 +1212,14 @@ impl App {
                 let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("file");
                 match crate::fs::opener::open_file(&path, &self.config.opener) {
                     Ok(_) => {
-                        self.status_message = format!("Opened: {}", filename);
+                        self.show_message(&format!("Opened: {}", filename));
                     }
                     Err(e) => {
-                        self.status_message = format!("Error: Failed to open file: {}", e);
+                        self.show_error(&format!("Failed to open file:\n{}", e));
                     }
                 }
             } else {
-                self.status_message = "Cannot open directory".to_string();
+                self.show_error("Cannot open directory");
             }
         }
     }
@@ -1178,7 +1232,7 @@ impl App {
                 // TUIを一時停止してエディタを起動
                 self.suspend_for_command = Some((editor, path));
             } else {
-                self.status_message = "Cannot open directory with editor".to_string();
+                self.show_error("Cannot open directory with editor");
             }
         }
     }
@@ -1191,7 +1245,7 @@ impl App {
                 // TUIを一時停止してページャを起動
                 self.suspend_for_command = Some((pager, path));
             } else {
-                self.status_message = "Cannot open directory with pager".to_string();
+                self.show_error("Cannot open directory with pager");
             }
         }
     }
@@ -1199,9 +1253,9 @@ impl App {
     fn execute_current_file(&mut self) {
         if let Some(entry) = self.active_pane().current_tab().current_entry() {
             if entry.is_dir {
-                self.status_message = "Cannot execute directory".to_string();
+                self.show_error("Cannot execute directory");
             } else if !entry.is_executable {
-                self.status_message = "File is not executable".to_string();
+                self.show_error("File is not executable");
             } else {
                 let path = entry.path.clone();
                 let path_str = path.to_string_lossy().to_string();
@@ -1222,7 +1276,7 @@ impl App {
             }
             let default_config = include_str!("../../config/default/echofiler.toml");
             if let Err(e) = fs::write(&config_path, default_config) {
-                self.status_message = format!("Error: Failed to create config file: {}", e);
+                self.show_error(&format!("Failed to create config file:\n{}", e));
                 return;
             }
         }
@@ -1243,7 +1297,7 @@ impl App {
             }
             let default_keymap = include_str!("../../config/default/keymap.toml");
             if let Err(e) = fs::write(&keymap_path, default_keymap) {
-                self.status_message = format!("Error: Failed to create keymap file: {}", e);
+                self.show_error(&format!("Failed to create keymap file:\n{}", e));
                 return;
             }
         }
@@ -1264,7 +1318,7 @@ impl App {
             }
             let default_theme = include_str!("../../config/default/theme.toml");
             if let Err(e) = fs::write(&theme_path, default_theme) {
-                self.status_message = format!("Error: Failed to create theme file: {}", e);
+                self.show_error(&format!("Failed to create theme file:\n{}", e));
                 return;
             }
         }
@@ -1285,7 +1339,7 @@ impl App {
             }
             let default_opener = include_str!("../../config/default/opener.toml");
             if let Err(e) = fs::write(&opener_path, default_opener) {
-                self.status_message = format!("Error: Failed to create opener file: {}", e);
+                self.show_error(&format!("Failed to create opener file:\n{}", e));
                 return;
             }
         }
@@ -1327,15 +1381,15 @@ impl App {
     }
 
     /// メッセージダイアログを表示
-    pub fn show_message(&mut self, message: String) {
-        self.dialog_message = message;
+    pub fn show_message(&mut self, message: &str) {
+        self.dialog_message = message.to_string();
         self.is_error_dialog = false;
         self.mode = InputMode::MessageDialog;
     }
 
     /// エラーダイアログを表示
-    pub fn show_error(&mut self, message: String) {
-        self.dialog_message = message;
+    pub fn show_error(&mut self, message: &str) {
+        self.dialog_message = message.to_string();
         self.is_error_dialog = true;
         self.mode = InputMode::MessageDialog;
     }
