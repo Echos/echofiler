@@ -37,12 +37,63 @@ cargo build --release --features preview
 cargo build --release --features preview,archive,plugin
 ```
 
+## インストール
+
+### Makeを使用したインストール（推奨）
+
+```bash
+# すべての機能を有効化してインストール
+make install
+
+# インストール先を変更する場合
+make install PREFIX=/usr/local
+
+# アンインストール
+make uninstall
+```
+
+デフォルトでは、以下にインストールされます：
+- バイナリ: `~/.local/bin/echofiler`
+- 設定ファイル: `~/.config/echofiler/`
+
+`~/.local/bin` がPATHに含まれていない場合は、以下を `~/.bashrc` または `~/.zshrc` に追加してください：
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Cargoを使用したインストール
+
+```bash
+# すべての機能を有効化してインストール
+cargo install --path . --features archive,preview,plugin
+
+# インストール後、設定ファイルを手動でコピー
+mkdir -p ~/.config/echofiler
+cp config/default/*.toml ~/.config/echofiler/
+```
+
+### install.shを使用したインストール（Makeがない環境）
+
+```bash
+# デフォルトインストール
+./install.sh
+
+# インストール先を変更
+PREFIX=/usr/local ./install.sh
+
+# デバッグビルドをインストール
+BUILD_TYPE=debug ./install.sh
+```
+
 ## 実行方法
 
 ```bash
-cargo run
-# または
-./target/release/echofiler
+# インストール済みの場合
+echofiler
+
+# または開発時
+cargo run --features archive,preview,plugin
 ```
 
 ## 設定
