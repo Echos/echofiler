@@ -111,6 +111,9 @@ impl<'a> PaneWidget<'a> {
         let mut state = ListState::default();
         state.select(Some(tab.cursor));
 
+        // 手動でスクロールオフセットを設定（自動スクロールを無効化）
+        *state.offset_mut() = tab.scroll_offset;
+
         // StatefulWidgetとして描画（スクロールオフセットを反映）
         StatefulWidget::render(list, area, buf, &mut state);
     }

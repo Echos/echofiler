@@ -34,6 +34,7 @@ pub struct App {
     pub suspend_for_command: Option<(String, std::path::PathBuf)>, // (command, path)
     pub current_prefix: Option<String>,  // 現在のプレフィックスキー（特殊ワード）
     pub screen_needs_clear: bool,  // 画面をクリアする必要があるか
+    pub last_pane_height: u16,  // 最後に描画されたペインの高さ
     pub should_quit: bool,
 }
 
@@ -81,6 +82,7 @@ impl App {
             suspend_for_command: None,
             current_prefix: None,
             screen_needs_clear: false,
+            last_pane_height: 20,  // デフォルト値
             should_quit: false,
         })
     }
@@ -545,12 +547,18 @@ impl App {
             }
             Action::CursorDown => {
                 self.active_pane_mut().current_tab_mut().move_cursor_down();
+                // スクロール位置を更新（画面の高さを考慮）
+                let visible_lines = self.last_pane_height.saturating_sub(2) as usize; // ボーダー分を引く
+                self.active_pane_mut().current_tab_mut().update_scroll(visible_lines);
                 if self.mode == InputMode::Visual {
                     self.active_pane_mut().current_tab_mut().toggle_select();
                 }
             }
             Action::CursorUp => {
                 self.active_pane_mut().current_tab_mut().move_cursor_up();
+                // スクロール位置を更新（画面の高さを考慮）
+                let visible_lines = self.last_pane_height.saturating_sub(2) as usize; // ボーダー分を引く
+                self.active_pane_mut().current_tab_mut().update_scroll(visible_lines);
                 if self.mode == InputMode::Visual {
                     self.active_pane_mut().current_tab_mut().toggle_select();
                 }

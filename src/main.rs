@@ -50,7 +50,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Res
             app.screen_needs_clear = false;
         }
 
-        terminal.draw(|f| ui(f, &app))?;
+        terminal.draw(|f| ui(f, &mut app))?;
 
         if app.should_quit {
             break;
@@ -108,7 +108,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Res
     Ok(())
 }
 
-fn ui(f: &mut ratatui::Frame, app: &App) {
+fn ui(f: &mut ratatui::Frame, app: &mut App) {
     use echofiler::core::PaneSide;
     use echofiler::ui::{bookmark::BookmarkWidget, bookmark_select::BookmarkSelectDialog, commandline::CommandLine, confirm::ConfirmWidget, help::HelpWidget, message_dialog::MessageDialog, pane::PaneWidget, preview::PreviewWidget, sidebar::SidebarWidget, statusline::Statusline, Layout};
     use echofiler::input::InputMode;
@@ -183,6 +183,9 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
         let panes = Layout::split_dual_pane_with_ratio(main_chunks[0], &app.config.layout.ratio);
         (panes, None)
     };
+
+    // ペインの高さを記録（スクロール計算用）
+    app.last_pane_height = panes[0].height;
 
     // プレビューモードONの場合、アクティブペインとは逆のペインにプレビューを表示
     if app.show_preview {
