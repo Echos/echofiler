@@ -44,6 +44,12 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Res
     let event_handler = EventHandler::new();
 
     loop {
+        // 画面をクリアする必要がある場合
+        if app.screen_needs_clear {
+            terminal.clear()?;
+            app.screen_needs_clear = false;
+        }
+
         terminal.draw(|f| ui(f, &app))?;
 
         if app.should_quit {

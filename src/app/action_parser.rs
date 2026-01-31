@@ -52,6 +52,7 @@ pub fn parse_action(action_name: &str) -> Option<Action> {
         "edit_keymap" | "keymap" => Some(Action::EditKeymap),
         "edit_theme" | "theme" => Some(Action::EditTheme),
         "edit_opener" | "opener" => Some(Action::EditOpener),
+        "screen_refresh" | "clear" => Some(Action::ScreenRefresh),
         _ => None,
     }
 }

@@ -79,7 +79,19 @@ fn execute_opener(opener: &str, path: &Path) -> Result<()> {
         }
     }
 
-    command.spawn()?;
+    // Windows環境でも出力を抑制
+    #[cfg(not(unix))]
+    {
+        use std::process::Stdio;
+        command.stdin(Stdio::null());
+        command.stdout(Stdio::null());
+        command.stderr(Stdio::null());
+    }
+
+    // コマンドを起動し、エラーメッセージを改善
+    command.spawn().map_err(|e| {
+        anyhow::anyhow!("Failed to execute '{}': {}", cmd, e)
+    })?;
 
     Ok(())
 }

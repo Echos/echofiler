@@ -102,6 +102,7 @@ impl<'a> HelpWidget<'a> {
         )));
         lines.push(Line::from("  Ctrl+t        New tab"));
         lines.push(Line::from("  Ctrl+w        Close tab"));
+        lines.push(Line::from("  Ctrl+l        Clear screen and refresh"));
         lines.push(Line::from("  h             Previous tab"));
         lines.push(Line::from("  l             Next tab"));
         lines.push(Line::from("  [ / ]         Previous / Next tab (alternative)"));

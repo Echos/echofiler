@@ -49,5 +49,6 @@ pub enum Action {
     EditKeymap,
     EditTheme,
     EditOpener,
+    ScreenRefresh,
     None,
 }

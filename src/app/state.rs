@@ -32,6 +32,7 @@ pub struct App {
     pub is_error_dialog: bool,
     pub suspend_for_command: Option<(String, std::path::PathBuf)>, // (command, path)
     pub current_prefix: Option<String>,  // 現在のプレフィックスキー（特殊ワード）
+    pub screen_needs_clear: bool,  // 画面をクリアする必要があるか
     pub should_quit: bool,
 }
 
@@ -77,6 +78,7 @@ impl App {
             is_error_dialog: false,
             suspend_for_command: None,
             current_prefix: None,
+            screen_needs_clear: false,
             should_quit: false,
         })
     }
@@ -170,6 +172,7 @@ impl App {
             match key.code {
                 KeyCode::Char('t') => return Action::NewTab,
                 KeyCode::Char('w') => return Action::CloseTab,
+                KeyCode::Char('l') => return Action::ScreenRefresh,
                 _ => {}
             }
         }
@@ -541,6 +544,12 @@ impl App {
                 self.active_pane = PaneSide::Right;
             }
             Action::Refresh => {
+                self.left_pane.current_tab_mut().reload();
+                self.right_pane.current_tab_mut().reload();
+            }
+            Action::ScreenRefresh => {
+                // 画面をクリアしてから再描画
+                self.screen_needs_clear = true;
                 self.left_pane.current_tab_mut().reload();
                 self.right_pane.current_tab_mut().reload();
             }
