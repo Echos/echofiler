@@ -21,6 +21,7 @@ pub struct App {
     pub command_input: String,
     pub command_prompt: String,
     pub show_preview: bool,
+    pub preview_scroll: usize,  // プレビューのスクロールオフセット（行数）
     pub bookmarks: BookmarkList,
     pub bookmark_cursor: usize,
     pub file_watcher: Option<FileWatcher>,
@@ -67,6 +68,7 @@ impl App {
             command_input: String::new(),
             command_prompt: String::new(),
             show_preview: false,
+            preview_scroll: 0,
             bookmarks,
             bookmark_cursor: 0,
             file_watcher,
@@ -168,6 +170,49 @@ impl App {
     }
 
     fn handle_normal_mode(&mut self, key: Key) -> Action {
+        // プレビュー表示中の場合、特別な処理
+        if self.show_preview {
+            match key.code {
+                KeyCode::Esc => {
+                    // ESCキーでプレビューを終了
+                    self.show_preview = false;
+                    self.preview_scroll = 0;
+                    return Action::None;
+                }
+                KeyCode::Char('j') | KeyCode::Down => {
+                    // 下にスクロール
+                    self.preview_scroll = self.preview_scroll.saturating_add(1);
+                    return Action::None;
+                }
+                KeyCode::Char('k') | KeyCode::Up => {
+                    // 上にスクロール
+                    self.preview_scroll = self.preview_scroll.saturating_sub(1);
+                    return Action::None;
+                }
+                KeyCode::Char('d') => {
+                    // ページダウン（半画面）
+                    self.preview_scroll = self.preview_scroll.saturating_add(10);
+                    return Action::None;
+                }
+                KeyCode::Char('u') => {
+                    // ページアップ（半画面）
+                    self.preview_scroll = self.preview_scroll.saturating_sub(10);
+                    return Action::None;
+                }
+                KeyCode::Char('g') => {
+                    // 先頭へ移動
+                    self.preview_scroll = 0;
+                    return Action::None;
+                }
+                KeyCode::Char('G') => {
+                    // 最後へ移動（大きな値を設定、PreviewWidgetで調整）
+                    self.preview_scroll = usize::MAX;
+                    return Action::None;
+                }
+                _ => {}
+            }
+        }
+
         if key.modifiers.contains(KeyModifiers::CONTROL) {
             match key.code {
                 KeyCode::Char('t') => return Action::NewTab,
@@ -519,6 +564,7 @@ impl App {
                     } else {
                         // ファイルの場合はプレビューモードをON
                         self.show_preview = true;
+                        self.preview_scroll = 0;  // スクロール位置をリセット
                     }
                 }
             }
@@ -628,6 +674,9 @@ impl App {
             }
             Action::TogglePreview => {
                 self.show_preview = !self.show_preview;
+                if self.show_preview {
+                    self.preview_scroll = 0;  // プレビューON時にスクロール位置をリセット
+                }
             }
             Action::CycleSortMethod => {
                 self.active_pane_mut().current_tab_mut().cycle_sort_method();

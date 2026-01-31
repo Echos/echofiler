@@ -188,7 +188,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
     if app.show_preview {
         let current_entry = app.active_pane().current_tab().current_entry();
         let preview_path = current_entry.map(|e| e.path.as_path());
-        let preview_widget = PreviewWidget::new(preview_path, &app.config.theme);
+        let preview_widget = PreviewWidget::new(preview_path, &app.config.theme, app.preview_scroll);
 
         let show_icons = app.config.general.show_icons;
         let icon_style = app.config.general.icon_style;

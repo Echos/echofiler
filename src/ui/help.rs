@@ -114,6 +114,10 @@ impl<'a> HelpWidget<'a> {
             Style::default().add_modifier(ratatui::style::Modifier::BOLD),
         )));
         lines.push(Line::from("  P             Toggle preview mode"));
+        lines.push(Line::from("  Esc           Close preview (in preview mode)"));
+        lines.push(Line::from("  j/k / ↓/↑     Scroll preview (in preview mode)"));
+        lines.push(Line::from("  d/u           Page down/up in preview"));
+        lines.push(Line::from("  g/G           Go to top/bottom in preview"));
         lines.push(Line::from("  i             Toggle sidebar"));
         lines.push(Line::from("  .             Toggle hidden files"));
         lines.push(Line::from("  s             Cycle sort method"));

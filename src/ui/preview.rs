@@ -15,11 +15,12 @@ use crate::fs::archive::{is_archive, list_archive_contents};
 pub struct PreviewWidget<'a> {
     path: Option<&'a Path>,
     theme: &'a ThemeConfig,
+    scroll: usize,
 }
 
 impl<'a> PreviewWidget<'a> {
-    pub fn new(path: Option<&'a Path>, theme: &'a ThemeConfig) -> Self {
-        Self { path, theme }
+    pub fn new(path: Option<&'a Path>, theme: &'a ThemeConfig, scroll: usize) -> Self {
+        Self { path, theme, scroll }
     }
 
     fn read_preview(&self, area: Rect) -> Vec<Line<'static>> {
@@ -103,7 +104,14 @@ impl<'a> Widget for PreviewWidget<'a> {
             .title(title);
 
         let lines = self.read_preview(area);
-        let paragraph = Paragraph::new(lines).block(block);
+
+        // スクロールを適用（最大値を制限）
+        let max_scroll = lines.len().saturating_sub(area.height.saturating_sub(2) as usize);
+        let scroll = self.scroll.min(max_scroll);
+
+        let paragraph = Paragraph::new(lines)
+            .block(block)
+            .scroll((scroll as u16, 0));
 
         Widget::render(paragraph, area, buf);
     }
