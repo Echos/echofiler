@@ -463,6 +463,9 @@ impl App {
                 PendingAction::MoveToOtherPane { paths, dest_dir } => {
                     self.execute_move_to_other_pane(paths, dest_dir);
                 }
+                PendingAction::Quit => {
+                    self.should_quit = true;
+                }
             }
         }
         self.confirm_message.clear();
@@ -470,7 +473,14 @@ impl App {
 
     pub fn update(&mut self, action: Action) {
         match action {
-            Action::Quit => self.should_quit = true,
+            Action::Quit => {
+                if self.config.general.confirm_quit {
+                    self.pending_action = Some(PendingAction::Quit);
+                    self.mode = InputMode::Confirm;
+                } else {
+                    self.should_quit = true;
+                }
+            }
             Action::CursorDown => {
                 self.active_pane_mut().current_tab_mut().move_cursor_down();
                 if self.mode == InputMode::Visual {

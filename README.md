@@ -138,6 +138,7 @@ brew install font-fira-code-nerd-font
 show_hidden = false          # 隠しファイルを表示するか
 confirm_delete = true        # 削除時に確認するか
 confirm_overwrite = true     # 上書き時に確認するか
+confirm_quit = true          # 終了時に確認するか
 show_icons = true            # ファイル/ディレクトリアイコンを表示するか
 icon_style = "nerd-fonts"    # アイコンスタイル: "nerd-fonts" | "emoji" | "ascii"
 icon_spacing = 1             # アイコン後のスペース数（0-9）
@@ -324,6 +325,7 @@ g → b → 入力: "Projects" → Enter
 [general]
 confirm_delete = false     # 削除時の確認を無効化
 confirm_overwrite = false  # 上書き時の確認を無効化
+confirm_quit = false       # 終了時の確認を無効化
 ```
 
 ### 設定編集

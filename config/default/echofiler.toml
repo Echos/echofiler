@@ -10,6 +10,9 @@ confirm_delete = true
 # 上書き時に確認するか
 confirm_overwrite = true
 
+# 終了時に確認するか
+confirm_quit = true
+
 # ゴミ箱を使用するか（未実装）
 use_trash = false
 

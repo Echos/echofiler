@@ -13,6 +13,8 @@ pub enum PendingAction {
     CopyToOtherPane { paths: Vec<PathBuf>, dest_dir: PathBuf },
     /// 別のペインに移動
     MoveToOtherPane { paths: Vec<PathBuf>, dest_dir: PathBuf },
+    /// アプリケーション終了
+    Quit,
 }
 
 impl PendingAction {
@@ -49,6 +51,9 @@ impl PendingAction {
                 } else {
                     format!("Move {} items to other pane?", paths.len())
                 }
+            }
+            PendingAction::Quit => {
+                "Quit echofiler?".to_string()
             }
         }
     }

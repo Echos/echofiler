@@ -22,6 +22,8 @@ pub struct GeneralConfig {
     pub confirm_delete: bool,
     #[serde(default = "default_true")]
     pub confirm_overwrite: bool,
+    #[serde(default = "default_true")]
+    pub confirm_quit: bool,
     #[serde(default)]
     pub use_trash: bool,
     #[serde(default)]
@@ -38,6 +40,7 @@ impl Default for GeneralConfig {
             show_hidden: false,
             confirm_delete: true,
             confirm_overwrite: true,
+            confirm_quit: true,
             use_trash: false,
             show_icons: false,
             icon_style: IconStyle::default(),
@@ -71,6 +74,7 @@ mod tests {
         assert_eq!(config.show_hidden, false);
         assert_eq!(config.confirm_delete, true);
         assert_eq!(config.confirm_overwrite, true);
+        assert_eq!(config.confirm_quit, true);
         assert_eq!(config.use_trash, false);
         assert_eq!(config.show_icons, false);
         assert_eq!(config.icon_style, IconStyle::NerdFonts);
@@ -83,6 +87,7 @@ mod tests {
             show_hidden = true
             confirm_delete = false
             confirm_overwrite = false
+            confirm_quit = false
             use_trash = true
             show_icons = true
             icon_style = "emoji"
@@ -94,6 +99,7 @@ mod tests {
         assert_eq!(config.show_hidden, true);
         assert_eq!(config.confirm_delete, false);
         assert_eq!(config.confirm_overwrite, false);
+        assert_eq!(config.confirm_quit, false);
         assert_eq!(config.use_trash, true);
         assert_eq!(config.show_icons, true);
         assert_eq!(config.icon_style, IconStyle::Emoji);
