@@ -1,6 +1,6 @@
 # echofiler
 
-Linux CLI用の二画面ファイラー。TOMLファイルによる高度なカスタマイズ性を持つファイルマネージャーです。
+クロスプラットフォーム対応のCLI二画面ファイラー。TOMLファイルによる高度なカスタマイズ性を持つファイルマネージャーです。Linux, macOS, Windowsで動作します。
 
 ## 特徴
 
@@ -98,7 +98,15 @@ cargo run --features archive,preview,plugin
 
 ## 設定
 
-設定ファイルは `~/.config/echofiler/echofiler.toml` に配置します。
+設定ファイルはOS標準の設定ディレクトリに配置します。
+
+| OS | パス |
+|----|------|
+| Linux | `~/.config/echofiler/echofiler.toml` |
+| macOS | `~/Library/Application Support/echofiler/echofiler.toml` |
+| Windows | `%APPDATA%\echofiler\echofiler.toml` |
+
+環境変数 `XDG_CONFIG_HOME` が設定されている場合はそちらが優先されます。
 
 設定ファイルが存在しない場合、デフォルト設定が使用されます。
 

@@ -17,7 +17,6 @@ use std::path::PathBuf;
 const DEFAULT_CONFIG: &str = include_str!("../../config/default/echofiler.toml");
 const DEFAULT_THEME: &str = include_str!("../../config/default/theme.toml");
 const DEFAULT_KEYMAP: &str = include_str!("../../config/default/keymap.toml");
-const DEFAULT_OPENER: &str = include_str!("../../config/default/opener.toml");
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
@@ -92,51 +91,47 @@ impl Config {
             let content = fs::read_to_string(&opener_path)?;
             toml::from_str(&content)?
         } else {
-            toml::from_str(DEFAULT_OPENER)?
+            // opener.tomlが存在しない場合はOS別デフォルトを使用
+            opener::OpenerConfig::default()
         };
 
         Ok(config)
     }
 
     pub fn get_config_path() -> PathBuf {
-        if let Ok(config_home) = std::env::var("XDG_CONFIG_HOME") {
-            PathBuf::from(config_home).join("echofiler/echofiler.toml")
-        } else if let Ok(home) = std::env::var("HOME") {
-            PathBuf::from(home).join(".config/echofiler/echofiler.toml")
-        } else {
-            PathBuf::from("echofiler.toml")
-        }
+        get_echofiler_config_dir().join("echofiler.toml")
     }
 
     pub fn get_theme_path() -> PathBuf {
-        if let Ok(config_home) = std::env::var("XDG_CONFIG_HOME") {
-            PathBuf::from(config_home).join("echofiler/theme.toml")
-        } else if let Ok(home) = std::env::var("HOME") {
-            PathBuf::from(home).join(".config/echofiler/theme.toml")
-        } else {
-            PathBuf::from("theme.toml")
-        }
+        get_echofiler_config_dir().join("theme.toml")
     }
 
     pub fn get_keymap_path() -> PathBuf {
-        if let Ok(config_home) = std::env::var("XDG_CONFIG_HOME") {
-            PathBuf::from(config_home).join("echofiler/keymap.toml")
-        } else if let Ok(home) = std::env::var("HOME") {
-            PathBuf::from(home).join(".config/echofiler/keymap.toml")
-        } else {
-            PathBuf::from("keymap.toml")
-        }
+        get_echofiler_config_dir().join("keymap.toml")
     }
 
     pub fn get_opener_path() -> PathBuf {
-        if let Ok(config_home) = std::env::var("XDG_CONFIG_HOME") {
-            PathBuf::from(config_home).join("echofiler/opener.toml")
-        } else if let Ok(home) = std::env::var("HOME") {
-            PathBuf::from(home).join(".config/echofiler/opener.toml")
-        } else {
-            PathBuf::from("opener.toml")
-        }
+        get_echofiler_config_dir().join("opener.toml")
     }
+}
+
+/// echofilerの設定ディレクトリパスを取得
+/// 優先順位: XDG_CONFIG_HOME > dirs::config_dir() > フォールバック
+pub fn get_echofiler_config_dir() -> PathBuf {
+    if let Ok(config_home) = std::env::var("XDG_CONFIG_HOME") {
+        return PathBuf::from(config_home).join("echofiler");
+    }
+
+    if let Some(config_dir) = dirs::config_dir() {
+        return config_dir.join("echofiler");
+    }
+
+    // フォールバック: HOME環境変数
+    if let Ok(home) = std::env::var("HOME") {
+        return PathBuf::from(home).join(".config/echofiler");
+    }
+
+    PathBuf::from("echofiler")
 }
 
 // 設定ファイルパスを取得する関数を公開

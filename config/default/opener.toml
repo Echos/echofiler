@@ -1,7 +1,14 @@
 # echofiler ファイルオープナー設定
+#
+# OS別推奨設定:
+#   Linux:   default = "xdg-open",         editor = "vi",      pager = "less"
+#   macOS:   default = "open",             editor = "vi",      pager = "less"
+#   Windows: default = "cmd /c start \"\"",  editor = "notepad", pager = "more"
+#
+# このファイルが存在しない場合、OSに応じたデフォルト値が自動的に使用されます。
+# 環境変数 $EDITOR / $PAGER が設定されている場合はそちらが優先されます。
 
 # デフォルトのオープナーコマンド
-# Linux: xdg-open, macOS: open, Windows: start
 default = "xdg-open"
 
 # エディタコマンド（環境変数$EDITORが優先される）

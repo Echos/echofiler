@@ -74,13 +74,7 @@ impl BookmarkList {
     }
 
     fn get_bookmark_path() -> PathBuf {
-        if let Ok(config_home) = std::env::var("XDG_CONFIG_HOME") {
-            PathBuf::from(config_home).join("echofiler/bookmarks.toml")
-        } else if let Ok(home) = std::env::var("HOME") {
-            PathBuf::from(home).join(".config/echofiler/bookmarks.toml")
-        } else {
-            PathBuf::from("bookmarks.toml")
-        }
+        crate::config::get_echofiler_config_dir().join("bookmarks.toml")
     }
 }
 

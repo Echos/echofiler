@@ -79,8 +79,23 @@ fn execute_opener(opener: &str, path: &Path) -> Result<()> {
         }
     }
 
-    // Windows環境でも出力を抑制
-    #[cfg(not(unix))]
+    // Windows環境: デタッチしてウィンドウなしで実行
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        use std::process::Stdio;
+
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        const DETACHED_PROCESS: u32 = 0x00000008;
+
+        command.stdin(Stdio::null());
+        command.stdout(Stdio::null());
+        command.stderr(Stdio::null());
+        command.creation_flags(CREATE_NO_WINDOW | DETACHED_PROCESS);
+    }
+
+    // その他のOS: 出力を抑制のみ
+    #[cfg(not(any(unix, windows)))]
     {
         use std::process::Stdio;
         command.stdin(Stdio::null());
@@ -138,6 +153,25 @@ pub fn execute_file(path: &Path) -> Result<()> {
 
         // 実行可能かチェック
         if permissions.mode() & 0o111 == 0 {
+            return Err(anyhow::anyhow!("File is not executable: {}", path.display()));
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        // Windowsでは拡張子で実行可能判定
+        let is_exec = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| {
+                matches!(
+                    e.to_lowercase().as_str(),
+                    "exe" | "bat" | "cmd" | "com" | "ps1"
+                )
+            })
+            .unwrap_or(false);
+
+        if !is_exec {
             return Err(anyhow::anyhow!("File is not executable: {}", path.display()));
         }
     }

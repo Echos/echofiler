@@ -37,13 +37,31 @@ impl Default for OpenerConfig {
 }
 
 fn default_opener() -> String {
-    "xdg-open".to_string()
+    if cfg!(target_os = "macos") {
+        "open".to_string()
+    } else if cfg!(target_os = "windows") {
+        "cmd /c start \"\"".to_string()
+    } else {
+        "xdg-open".to_string()
+    }
 }
 
 fn default_editor() -> String {
-    std::env::var("EDITOR").unwrap_or_else(|_| "vi".to_string())
+    std::env::var("EDITOR").unwrap_or_else(|_| {
+        if cfg!(target_os = "windows") {
+            "notepad".to_string()
+        } else {
+            "vi".to_string()
+        }
+    })
 }
 
 fn default_pager() -> String {
-    std::env::var("PAGER").unwrap_or_else(|_| "less".to_string())
+    std::env::var("PAGER").unwrap_or_else(|_| {
+        if cfg!(target_os = "windows") {
+            "more".to_string()
+        } else {
+            "less".to_string()
+        }
+    })
 }
