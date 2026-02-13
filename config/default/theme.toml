@@ -20,11 +20,23 @@ broken_symlink = { fg = "red" }
 # 隠しファイル
 hidden = { fg = "gray" }
 
-# アーカイブ
-archive = { fg = "magenta" }
+# アーカイブ (zip, tar, gz, 7z, rar等)
+archive = { fg = "red" }
 
-# 画像
-image = { fg = "yellow" }
+# 画像 (png, jpg, gif, webp等)
+image = { fg = "magenta" }
+
+# 動画 (mp4, mkv, avi, mov等)
+video = { fg = "magenta", modifiers = ["bold"] }
+
+# 音声 (mp3, wav, flac, ogg等)
+audio = { fg = "cyan" }
+
+# ドキュメント (pdf, doc, xls, ppt等)
+document = { fg = "yellow" }
+
+# ソースコード (rs, py, js, ts, c, go等)
+source = { fg = "green" }
 
 [ui]
 # ボーダー

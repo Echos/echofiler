@@ -1,6 +1,6 @@
 use crate::core::Pane;
 use crate::config::general::IconStyle;
-use crate::config::theme::ThemeConfig;
+use crate::config::theme::{self, ThemeConfig};
 use crate::ui::icons;
 use ratatui::{
     buffer::Buffer,
@@ -96,6 +96,18 @@ impl<'a> PaneWidget<'a> {
                     self.theme.file.executable.to_style()
                 } else if entry.is_symlink {
                     self.theme.file.symlink.to_style()
+                } else if let Some(cat) = entry.path.extension()
+                    .and_then(|e| e.to_str())
+                    .and_then(theme::file_category_from_ext)
+                {
+                    match cat {
+                        theme::FileCategory::Archive => self.theme.file.archive.to_style(),
+                        theme::FileCategory::Image => self.theme.file.image.to_style(),
+                        theme::FileCategory::Video => self.theme.file.video.to_style(),
+                        theme::FileCategory::Audio => self.theme.file.audio.to_style(),
+                        theme::FileCategory::Document => self.theme.file.document.to_style(),
+                        theme::FileCategory::Source => self.theme.file.source.to_style(),
+                    }
                 } else {
                     Style::default()
                 };

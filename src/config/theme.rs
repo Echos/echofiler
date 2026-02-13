@@ -29,6 +29,18 @@ pub struct FileColorConfig {
     pub symlink: StyleConfig,
     #[serde(default)]
     pub hidden: StyleConfig,
+    #[serde(default)]
+    pub archive: StyleConfig,
+    #[serde(default)]
+    pub image: StyleConfig,
+    #[serde(default)]
+    pub video: StyleConfig,
+    #[serde(default)]
+    pub audio: StyleConfig,
+    #[serde(default)]
+    pub document: StyleConfig,
+    #[serde(default)]
+    pub source: StyleConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -90,6 +102,36 @@ impl Default for FileColorConfig {
             },
             hidden: StyleConfig {
                 fg: Some("gray".to_string()),
+                bg: None,
+                modifiers: vec![],
+            },
+            archive: StyleConfig {
+                fg: Some("red".to_string()),
+                bg: None,
+                modifiers: vec![],
+            },
+            image: StyleConfig {
+                fg: Some("magenta".to_string()),
+                bg: None,
+                modifiers: vec![],
+            },
+            video: StyleConfig {
+                fg: Some("magenta".to_string()),
+                bg: None,
+                modifiers: vec!["bold".to_string()],
+            },
+            audio: StyleConfig {
+                fg: Some("cyan".to_string()),
+                bg: None,
+                modifiers: vec![],
+            },
+            document: StyleConfig {
+                fg: Some("yellow".to_string()),
+                bg: None,
+                modifiers: vec![],
+            },
+            source: StyleConfig {
+                fg: Some("green".to_string()),
                 bg: None,
                 modifiers: vec![],
             },
@@ -191,6 +233,50 @@ fn parse_color(s: &str) -> Option<Color> {
             }
         }
     }
+}
+
+/// 拡張子からファイルカテゴリを判定
+pub fn file_category_from_ext(ext: &str) -> Option<FileCategory> {
+    match ext.to_lowercase().as_str() {
+        // アーカイブ
+        "zip" | "tar" | "gz" | "bz2" | "xz" | "7z" | "rar" | "zst" | "lz4" | "lzma" | "tgz" => {
+            Some(FileCategory::Archive)
+        }
+        // 画像
+        "png" | "jpg" | "jpeg" | "gif" | "bmp" | "webp" | "ico" | "tiff" | "tif" | "svg"
+        | "avif" | "heic" | "heif" => Some(FileCategory::Image),
+        // 動画
+        "mp4" | "mkv" | "avi" | "mov" | "wmv" | "flv" | "webm" | "m4v" | "mpg" | "mpeg"
+        | "mts" => Some(FileCategory::Video),
+        // 音声
+        "mp3" | "wav" | "flac" | "ogg" | "aac" | "wma" | "m4a" | "opus" | "alac" => {
+            Some(FileCategory::Audio)
+        }
+        // ドキュメント
+        "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "odt" | "ods" | "odp"
+        | "epub" | "rtf" => Some(FileCategory::Document),
+        // ソースコード
+        "rs" | "py" | "js" | "ts" | "jsx" | "tsx" | "c" | "cpp" | "h" | "hpp" | "go"
+        | "java" | "rb" | "php" | "swift" | "kt" | "scala" | "zig" | "lua" | "sh" | "bash"
+        | "zsh" | "fish" | "ps1" | "pl" | "r" | "jl" | "ex" | "exs" | "erl" | "hs"
+        | "ml" | "vim" | "el" | "clj" | "dart" | "css" | "scss" | "sass" | "less"
+        | "html" | "htm" | "xml" | "json" | "yaml" | "yml" | "toml" | "ini" | "cfg"
+        | "conf" | "sql" | "graphql" | "proto" | "md" | "rst" | "tex" => {
+            Some(FileCategory::Source)
+        }
+        _ => None,
+    }
+}
+
+/// ファイルカテゴリ
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileCategory {
+    Archive,
+    Image,
+    Video,
+    Audio,
+    Document,
+    Source,
 }
 
 /// modifier文字列をratatuiのModifierに変換
