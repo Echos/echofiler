@@ -86,12 +86,65 @@ impl Entry {
         false
     }
 
+    /// DirEntryから直接構築（read_dir最適化用、余計なsyscallを回避）
+    fn from_dir_entry(dir_entry: &fs::DirEntry) -> std::io::Result<Self> {
+        let path = dir_entry.path();
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_string();
+
+        // DirEntry::metadata()はOSによってはsymlink_metadataより高速
+        // （Linuxではd_typeが使える場合がある）
+        let file_type = dir_entry.file_type()?;
+        let is_dir = file_type.is_dir();
+        let is_symlink = file_type.is_symlink();
+
+        // メタデータは必要な場合のみ取得
+        let metadata = dir_entry.metadata()?;
+
+        let is_hidden = Self::check_hidden(&path, &name);
+
+        #[cfg(unix)]
+        let is_executable = {
+            let mode = metadata.permissions().mode();
+            mode & 0o111 != 0
+        };
+
+        #[cfg(windows)]
+        let is_executable = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| {
+                matches!(
+                    e.to_lowercase().as_str(),
+                    "exe" | "bat" | "cmd" | "com" | "ps1"
+                )
+            })
+            .unwrap_or(false);
+
+        #[cfg(not(any(unix, windows)))]
+        let is_executable = false;
+
+        Ok(Self {
+            path,
+            name,
+            is_dir,
+            is_hidden,
+            is_symlink,
+            is_executable,
+            size: metadata.len(),
+            modified: metadata.modified().ok(),
+        })
+    }
+
     pub fn read_dir(path: &Path) -> std::io::Result<Vec<Self>> {
         let mut entries = Vec::new();
 
         for entry in fs::read_dir(path)? {
             let entry = entry?;
-            if let Ok(file_entry) = Self::from_path(&entry.path()) {
+            if let Ok(file_entry) = Self::from_dir_entry(&entry) {
                 entries.push(file_entry);
             }
         }

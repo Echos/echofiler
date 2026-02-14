@@ -2,10 +2,16 @@ use anyhow::Result;
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
 use std::sync::mpsc::{channel, Receiver, Sender};
+use std::time::{Duration, Instant};
+
+/// ファイル変更検知後のデバウンス間隔
+const DEBOUNCE_DURATION: Duration = Duration::from_millis(500);
 
 pub struct FileWatcher {
     watcher: RecommendedWatcher,
     receiver: Receiver<Result<Event, notify::Error>>,
+    last_event_time: Option<Instant>,
+    pending: bool,
 }
 
 impl FileWatcher {
@@ -22,6 +28,8 @@ impl FileWatcher {
         Ok(Self {
             watcher,
             receiver: rx,
+            last_event_time: None,
+            pending: false,
         })
     }
 
@@ -35,13 +43,32 @@ impl FileWatcher {
         Ok(())
     }
 
-    pub fn check_events(&self) -> bool {
-        // ノンブロッキングでイベントをチェック
-        self.receiver.try_recv().is_ok()
+    /// デバウンス付きイベントチェック
+    /// 短時間に連続するイベントをまとめて1回のreloadにする
+    pub fn check_events(&mut self) -> bool {
+        // 新しいイベントがあればpendingフラグを立てる
+        while self.receiver.try_recv().is_ok() {
+            self.pending = true;
+            self.last_event_time = Some(Instant::now());
+        }
+
+        // pendingがあり、最後のイベントからデバウンス時間が経過していればtrue
+        if self.pending {
+            if let Some(last) = self.last_event_time {
+                if last.elapsed() >= DEBOUNCE_DURATION {
+                    self.pending = false;
+                    self.last_event_time = None;
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 
-    pub fn clear_events(&self) {
-        // すべてのイベントをクリア
+    pub fn clear_events(&mut self) {
         while self.receiver.try_recv().is_ok() {}
+        self.pending = false;
+        self.last_event_time = None;
     }
 }

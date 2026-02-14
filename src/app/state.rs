@@ -762,9 +762,8 @@ impl App {
     }
 
     pub fn check_file_changes(&mut self) -> bool {
-        if let Some(ref watcher) = self.file_watcher {
+        if let Some(ref mut watcher) = self.file_watcher {
             if watcher.check_events() {
-                watcher.clear_events();
                 return true;
             }
         }
