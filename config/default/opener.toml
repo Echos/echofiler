@@ -1,7 +1,15 @@
 # echofiler ファイルオープナー設定
 
 # デフォルトのオープナーコマンド
-# Linux: xdg-open, macOS: open, Windows: start
+#
+# 指定したコマンドが存在しない環境では
+# "Opener command not found: '...' (check opener.toml)" になるため、環境に合わせて変更する:
+#   Linux (デスクトップ環境あり): xdg-open   ... xdg-utils パッケージ
+#   WSL:                          wslview    ... wslu パッケージ (Windows側の既定アプリで開く)
+#   macOS:                        open
+#
+# vi / less のように端末を必要とするコマンドを指定した場合は、
+# TUIを一時停止してフォアグラウンドで起動される (デタッチ実行では動作しないため)。
 default = "xdg-open"
 
 # エディタコマンド（環境変数$EDITORが優先される）

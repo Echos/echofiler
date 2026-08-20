@@ -424,6 +424,18 @@ echofiler.hooks.register("on_startup", "on_startup")
 
 `~/.config/echofiler/opener.toml` でファイルを開くアプリケーションをカスタマイズできます。
 
+`default` に指定したコマンドが環境に存在しないと、`Enter` や `o` で
+`Error: Opener command not found: '...' (check opener.toml)` になります。環境に応じて変更してください。
+
+| 環境 | `default` | 必要なパッケージ |
+|---|---|---|
+| Linux（デスクトップ環境あり） | `xdg-open` | `xdg-utils` |
+| WSL | `wslview` | `wslu`（Windows側の既定アプリで開く） |
+| macOS | `open` | 標準で利用可能 |
+
+`vi` や `less` のように端末を必要とするコマンドを指定した場合は、TUIを一時停止してフォアグラウンドで起動されます
+（デタッチ実行では端末を失い動作しないため）。
+
 ```toml
 # デフォルトのオープナー
 default = "xdg-open"

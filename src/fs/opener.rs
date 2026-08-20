@@ -3,6 +3,40 @@ use anyhow::Result;
 use std::path::Path;
 use std::process::Command;
 
+/// 端末を必要とするオープナー（フォアグラウンドで起動しないと動作しない）
+const TERMINAL_OPENERS: &[&str] = &[
+    "vi", "vim", "nvim", "nano", "emacs", "micro", "helix", "hx", "kak", "ne",
+    "less", "more", "most", "bat", "man",
+];
+
+/// パスに対して使われるオープナーコマンドを解決する
+pub fn resolve_opener<'a>(path: &Path, config: &'a OpenerConfig) -> &'a str {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .and_then(|ext| config.extension.get(ext))
+        .map(|s| s.as_str())
+        .unwrap_or(&config.default)
+}
+
+/// オープナーが端末を必要とするコマンドかどうかを判定する
+///
+/// これらはデタッチして起動すると端末を失って動作しないため、
+/// TUIを一時停止してフォアグラウンドで実行する必要がある。
+pub fn is_terminal_opener(opener: &str) -> bool {
+    opener
+        .split_whitespace()
+        .next()
+        .map(|cmd| {
+            // パス付きで指定された場合もコマンド名で判定する
+            let name = Path::new(cmd)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(cmd);
+            TERMINAL_OPENERS.contains(&name)
+        })
+        .unwrap_or(false)
+}
+
 /// ファイルを適切なアプリケーションで開く
 pub fn open_file(path: &Path, config: &OpenerConfig) -> Result<()> {
     if !path.exists() {
@@ -14,15 +48,7 @@ pub fn open_file(path: &Path, config: &OpenerConfig) -> Result<()> {
         return Err(anyhow::anyhow!("Cannot open directory: {}", path.display()));
     }
 
-    // 拡張子ベースのマッチング
-    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-        if let Some(opener) = config.extension.get(ext) {
-            return execute_opener(opener, path);
-        }
-    }
-
-    // デフォルトのオープナーを使用
-    execute_opener(&config.default, path)
+    execute_opener(resolve_opener(path, config), path)
 }
 
 /// エディタでファイルを開く
@@ -79,9 +105,24 @@ fn execute_opener(opener: &str, path: &Path) -> Result<()> {
         }
     }
 
-    command.spawn()?;
+    command.spawn().map_err(|e| opener_error(cmd, e))?;
 
     Ok(())
+}
+
+/// オープナー起動失敗時のエラーを組み立てる
+///
+/// spawn/status の ENOENT は「開くファイルが無い」ではなく
+/// 「オープナーコマンドが見つからない」を意味するため、区別して伝える。
+fn opener_error(cmd: &str, e: std::io::Error) -> anyhow::Error {
+    if e.kind() == std::io::ErrorKind::NotFound {
+        anyhow::anyhow!(
+            "Opener command not found: '{}' (check opener.toml)",
+            cmd
+        )
+    } else {
+        anyhow::anyhow!("Failed to run opener '{}': {}", cmd, e)
+    }
 }
 
 /// エディタでファイルを編集（フォアグラウンド実行、TUI一時停止が必要）
@@ -103,7 +144,8 @@ pub fn edit_file_foreground(path: &Path, editor: &str) -> Result<()> {
     let status = Command::new(cmd)
         .args(args)
         .arg(path)
-        .status()?;
+        .status()
+        .map_err(|e| opener_error(cmd, e))?;
 
     if !status.success() {
         return Err(anyhow::anyhow!("Editor exited with error: {}", status));
@@ -134,4 +176,70 @@ pub fn execute_file(path: &Path) -> Result<()> {
     Command::new(path).spawn()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn config() -> OpenerConfig {
+        let mut config = OpenerConfig::default();
+        config.default = "xdg-open".to_string();
+        config.extension.insert("toml".to_string(), "vi".to_string());
+        config
+            .extension
+            .insert("png".to_string(), "xdg-open".to_string());
+        config
+    }
+
+    #[test]
+    fn resolve_opener_prefers_extension_over_default() {
+        let config = config();
+        assert_eq!(
+            resolve_opener(&PathBuf::from("/tmp/a.toml"), &config),
+            "vi"
+        );
+        assert_eq!(
+            resolve_opener(&PathBuf::from("/tmp/a.png"), &config),
+            "xdg-open"
+        );
+        // 未登録の拡張子・拡張子なしは既定のオープナー
+        assert_eq!(
+            resolve_opener(&PathBuf::from("/tmp/a.unknown"), &config),
+            "xdg-open"
+        );
+        assert_eq!(resolve_opener(&PathBuf::from("/tmp/README"), &config), "xdg-open");
+    }
+
+    #[test]
+    fn terminal_openers_are_detected() {
+        // 端末を必要とするものはフォアグラウンド起動が必要
+        assert!(is_terminal_opener("vi"));
+        assert!(is_terminal_opener("nvim"));
+        assert!(is_terminal_opener("less"));
+        assert!(is_terminal_opener("/usr/bin/vim"));
+        assert!(is_terminal_opener("less -R"));
+
+        // GUI・デタッチして良いもの
+        assert!(!is_terminal_opener("xdg-open"));
+        assert!(!is_terminal_opener("wslview"));
+        assert!(!is_terminal_opener("feh"));
+        assert!(!is_terminal_opener(""));
+    }
+
+    #[test]
+    fn missing_opener_command_is_reported_as_such() {
+        // ENOENT は「ファイルが無い」ではなく「オープナーが無い」と伝える
+        let err = opener_error(
+            "no-such-opener",
+            std::io::Error::from(std::io::ErrorKind::NotFound),
+        );
+        let message = err.to_string();
+        assert!(
+            message.contains("Opener command not found") && message.contains("no-such-opener"),
+            "想定外のメッセージ: {message}"
+        );
+        assert!(!message.contains("No such file or directory"), "{message}");
+    }
 }

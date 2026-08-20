@@ -448,7 +448,7 @@ impl App {
                                 self.active_pane_mut().current_tab_mut().reload();
                             }
                             Err(e) => {
-                                eprintln!("Failed to extract archive: {}", e);
+                                self.status_message = format!("Error: {}", e);
                             }
                         }
                     }
@@ -492,9 +492,7 @@ impl App {
                     } else {
                         // ファイルの場合は開く
                         let path = entry.path.clone();
-                        if let Err(e) = crate::fs::opener::open_file(&path, &self.config.opener) {
-                            eprintln!("Failed to open file: {}", e);
-                        }
+                        self.open_path(&path);
                     }
                 }
             }
@@ -1101,7 +1099,7 @@ impl App {
                             self.active_pane_mut().current_tab_mut().reload();
                         }
                         Err(e) => {
-                            eprintln!("Failed to extract archive: {}", e);
+                            self.status_message = format!("Error: {}", e);
                         }
                     }
                 }
@@ -1111,7 +1109,7 @@ impl App {
 
     #[cfg(not(feature = "archive"))]
     fn extract_archive(&mut self) {
-        eprintln!("Archive support requires 'archive' feature");
+        self.status_message = "Archive support requires 'archive' feature".to_string();
     }
 
     #[cfg(feature = "archive")]
@@ -1141,32 +1139,44 @@ impl App {
                 tab.reload();
             }
             Err(e) => {
-                eprintln!("Failed to compress files: {}", e);
+                self.status_message = format!("Error: {}", e);
             }
         }
     }
 
     #[cfg(not(feature = "archive"))]
     fn compress_to_zip(&mut self) {
-        eprintln!("Archive support requires 'archive' feature");
+        self.status_message = "Archive support requires 'archive' feature".to_string();
     }
 
     fn open_current_file(&mut self) {
         if let Some(entry) = self.active_pane().current_tab().current_entry() {
-            if !entry.is_dir {
-                let path = entry.path.clone();
-                let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("file");
-                match crate::fs::opener::open_file(&path, &self.config.opener) {
-                    Ok(_) => {
-                        self.status_message = format!("Opened: {}", filename);
-                    }
-                    Err(e) => {
-                        self.status_message = format!("Error: Failed to open file: {}", e);
-                    }
-                }
-            } else {
+            if entry.is_dir {
                 self.status_message = "Cannot open directory".to_string();
+            } else {
+                let path = entry.path.clone();
+                self.open_path(&path);
             }
+        }
+    }
+
+    /// ファイルを設定されたオープナーで開く
+    ///
+    /// vi や less のように端末を必要とするオープナーはデタッチ実行では動作しないため、
+    /// TUIを一時停止してフォアグラウンドで起動する。
+    fn open_path(&mut self, path: &std::path::Path) {
+        use crate::fs::opener::{is_terminal_opener, open_file, resolve_opener};
+
+        let opener = resolve_opener(path, &self.config.opener).to_string();
+        if is_terminal_opener(&opener) {
+            self.suspend_for_command = Some((opener, path.to_path_buf()));
+            return;
+        }
+
+        let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("file");
+        match open_file(path, &self.config.opener) {
+            Ok(_) => self.status_message = format!("Opened: {}", filename),
+            Err(e) => self.status_message = format!("Error: {}", e),
         }
     }
 
