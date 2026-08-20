@@ -25,6 +25,11 @@ icon_style = "nerd-fonts"
 # アイコン後のスペース数 (0-9)
 icon_spacing = 1
 
+# 終了時のディレクトリを記憶し、次回起動時にそのディレクトリから開始するか
+# 記憶した場所: ${XDG_DATA_HOME:-~/.local/share}/echofiler/session.toml
+# false の場合は常にカレントディレクトリから開始する
+restore_last_dir = true
+
 [layout]
 # レイアウトスタイル: "dual" | "miller" | "single"
 style = "dual"

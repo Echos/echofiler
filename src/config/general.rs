@@ -30,6 +30,9 @@ pub struct GeneralConfig {
     pub icon_style: IconStyle,
     #[serde(default = "default_icon_spacing")]
     pub icon_spacing: u8,
+    /// 終了時のディレクトリを記憶し、次回起動時に復元する
+    #[serde(default = "default_true")]
+    pub restore_last_dir: bool,
 }
 
 impl Default for GeneralConfig {
@@ -42,6 +45,7 @@ impl Default for GeneralConfig {
             show_icons: false,
             icon_style: IconStyle::default(),
             icon_spacing: 1,
+            restore_last_dir: true,
         }
     }
 }

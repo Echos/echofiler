@@ -1,6 +1,6 @@
 use crate::config::watcher::ConfigWatcher;
 use crate::config::Config;
-use crate::core::{BookmarkList, Clipboard, ClipboardMode, Pane, PaneSide};
+use crate::core::{BookmarkList, Clipboard, ClipboardMode, Pane, PaneSide, Session};
 use crate::fs::watcher::FileWatcher;
 use crate::input::{InputMode, Key};
 use crossterm::event::{KeyCode, KeyModifiers};
@@ -42,10 +42,24 @@ impl App {
         let show_hidden = config.general.show_hidden;
         let bookmarks = BookmarkList::load().unwrap_or_default();
 
+        // 前回終了時のディレクトリを復元（読み込み失敗・削除済みならカレントディレクトリ）
+        let session = if config.general.restore_last_dir {
+            Session::load().unwrap_or_default()
+        } else {
+            Session::default()
+        };
+        let left_dir = session.dir(PaneSide::Left).unwrap_or_else(|| cwd.clone());
+        let right_dir = session.dir(PaneSide::Right).unwrap_or_else(|| cwd.clone());
+        let active_pane = session.active_side().unwrap_or(PaneSide::Left);
+        let watch_dir = match active_pane {
+            PaneSide::Left => left_dir.clone(),
+            PaneSide::Right => right_dir.clone(),
+        };
+
         // ファイル監視機能を初期化（失敗してもcontinue）
         let mut file_watcher = FileWatcher::new().ok();
         if let Some(ref mut watcher) = file_watcher {
-            let _ = watcher.watch(&cwd);
+            let _ = watcher.watch(&watch_dir);
         }
 
         // 設定ファイル監視機能を初期化
@@ -57,9 +71,9 @@ impl App {
         }
 
         Ok(Self {
-            left_pane: Pane::with_show_hidden(cwd.clone(), show_hidden),
-            right_pane: Pane::with_show_hidden(cwd, show_hidden),
-            active_pane: PaneSide::Left,
+            left_pane: Pane::with_show_hidden(left_dir, show_hidden),
+            right_pane: Pane::with_show_hidden(right_dir, show_hidden),
+            active_pane,
             mode: InputMode::Normal,
             config,
             clipboard: Clipboard::default(),
@@ -470,7 +484,10 @@ impl App {
 
     pub fn update(&mut self, action: Action) {
         match action {
-            Action::Quit => self.should_quit = true,
+            Action::Quit => {
+                self.save_session();
+                self.should_quit = true;
+            }
             Action::CursorDown => {
                 self.active_pane_mut().current_tab_mut().move_cursor_down();
                 if self.mode == InputMode::Visual {
@@ -607,7 +624,7 @@ impl App {
                 self.config.sidebar.enabled = !self.config.sidebar.enabled;
             }
             Action::AddBookmark => {
-                self.command_prompt = "Bookmark (name [key]): ".to_string();
+                self.command_prompt = "Bookmark (name [key], e.g. \"Home h\"): ".to_string();
                 self.command_input.clear();
                 self.mode = InputMode::Command;
             }
@@ -1026,21 +1043,23 @@ impl App {
                     .set_filter(Some(input.to_string()));
             }
         } else if self.command_prompt.starts_with("Bookmark") {
-            if !input.is_empty() {
+            if let Some((name, key)) = crate::core::parse_bookmark_input(input) {
                 let path = self.active_pane().current_tab().cwd.clone();
 
-                // "名前 キー" または "名前" をパース
-                let parts: Vec<&str> = input.rsplitn(2, ' ').collect();
-                if parts.len() == 2 && parts[0].len() == 1 {
-                    // "名前 キー" 形式（最後がスペース+1文字）
-                    let key_char = parts[0].chars().next().unwrap();
-                    let name = parts[1].to_string();
-                    self.bookmarks.add_with_key(name, path, key_char);
-                    self.status_message = format!("Registered bookmark '{}' with key '{}'", parts[1], key_char);
-                } else {
-                    // "名前" のみ
-                    self.bookmarks.add(input.to_string(), path);
-                    self.status_message = format!("Added bookmark '{}'", input);
+                match key {
+                    Some(key_char) => {
+                        self.bookmarks.add_with_key(name.clone(), path, key_char);
+                        self.status_message =
+                            format!("Registered bookmark '{}' with key '{}'", name, key_char);
+                    }
+                    None => {
+                        self.bookmarks.add(name.clone(), path);
+                        // キー未指定だと g <key> でジャンプできないため、指定方法を案内する
+                        self.status_message = format!(
+                            "Added bookmark '{}' without a jump key. Enter \"{} <key>\" to assign one.",
+                            name, name
+                        );
+                    }
                 }
 
                 let _ = self.bookmarks.save();
@@ -1158,6 +1177,22 @@ impl App {
                 self.open_path(&path);
             }
         }
+    }
+
+    /// 終了時のディレクトリを保存する
+    ///
+    /// 保存に失敗しても終了は妨げない（次回はカレントディレクトリから開始する）。
+    fn save_session(&self) {
+        if !self.config.general.restore_last_dir {
+            return;
+        }
+
+        let session = Session::from_dirs(
+            self.left_pane.current_tab().cwd.clone(),
+            self.right_pane.current_tab().cwd.clone(),
+            self.active_pane,
+        );
+        let _ = session.save();
     }
 
     /// ファイルを設定されたオープナーで開く
