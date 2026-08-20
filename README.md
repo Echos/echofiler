@@ -24,7 +24,71 @@ Linux CLI用の二画面ファイラー。TOMLファイルによる高度なカ�
 - **設定**: toml + serde
 - **言語**: Rust
 
+## インストール
+
+付属のインストーラーがビルドからバイナリ・初期設定ファイルの配置までを行います。
+
+```bash
+# ユーザー環境にインストール (~/.local/bin と ~/.config/echofiler)
+./install.sh
+
+# すべての機能を有効化してインストール
+./install.sh --features all
+
+# システム全体にインストール
+sudo ./install.sh --prefix /usr/local
+
+# 実行内容だけ確認する (ファイルを変更しない)
+./install.sh --dry-run
+```
+
+`make` 経由でも同じことができます。
+
+```bash
+make install                    # ~/.local へインストール
+make install FEATURES=all       # 全機能を有効化
+make install PREFIX=/usr/local  # インストール先を変更
+make install-dry                # dry-run
+make uninstall                  # バイナリのみ削除
+make purge                      # 設定・データも削除
+```
+
+### インストール先
+
+| 対象 | パス | 備考 |
+|---|---|---|
+| バイナリ | `$PREFIX/bin/echofiler` | 既定は `~/.local/bin` (rootで実行時は `/usr/local/bin`) |
+| 設定ファイル | `${XDG_CONFIG_HOME:-~/.config}/echofiler/*.toml` | `echofiler.toml`, `theme.toml`, `keymap.toml`, `opener.toml` |
+| プラグイン | `${XDG_CONFIG_HOME:-~/.config}/echofiler/plugins/` | サンプルは `plugins/examples/` に配置 (自動読み込みはされない) |
+| ログ・データ | `${XDG_DATA_HOME:-~/.local/share}/echofiler/` | ログの既定出力先 |
+
+既存の設定ファイルは**上書きされません**。既定値へ戻したい場合は `--force` を指定します（旧ファイルは `<名前>.bak-<日時>` に退避されます）。
+
+主なオプション:
+
+| オプション | 説明 |
+|---|---|
+| `--prefix DIR` | バイナリのインストール先プレフィックス |
+| `--config-dir DIR` / `--data-dir DIR` | 設定・データディレクトリ |
+| `--features LIST` | cargoのfeature指定 (`preview,archive,plugin` または `all`) |
+| `--no-build` / `--bin PATH` | ビルドを省略し、既存またはビルド済みバイナリを使う |
+| `--with-example-plugin` | サンプルプラグインを有効な状態で配置する |
+| `--force` | 既存設定を退避して上書きする |
+| `--uninstall` / `--purge` | アンインストール (`--purge` は設定・データも削除) |
+| `--dry-run` | 変更せず実行内容のみ表示 |
+
+全オプションは `./install.sh --help` で確認できます。
+
+### アンインストール
+
+```bash
+./install.sh --uninstall           # バイナリのみ削除 (設定は残る)
+./install.sh --uninstall --purge   # 設定・データも削除
+```
+
 ## ビルド方法
+
+インストーラーを使わずビルドのみ行う場合:
 
 ```bash
 # 基本ビルド
@@ -40,16 +104,26 @@ cargo build --release --features preview,archive,plugin
 ## 実行方法
 
 ```bash
+# インストール済みの場合
+echofiler
+
+# リポジトリから直接実行
 cargo run
 # または
 ./target/release/echofiler
 ```
 
+`~/.local/bin` がPATHに無い場合は、シェル設定に以下を追加してください。
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 ## 設定
 
-設定ファイルは `~/.config/echofiler/echofiler.toml` に配置します。
+設定ファイルは `~/.config/echofiler/echofiler.toml` に配置します。インストーラーが既定値のコピーを配置するので、これを編集してカスタマイズします。
 
-設定ファイルが存在しない場合、デフォルト設定が使用されます。
+設定ファイルが存在しない場合、バイナリに埋め込まれたデフォルト設定が使用されます。
 
 ### アイコン表示の設定
 
@@ -450,6 +524,15 @@ mp4 = "mpv"
   - 設定ファイルの変更を自動検出
   - echofiler.toml, theme.toml, keymap.toml の監視
   - 変更時に自動で設定を再読み込み
+
+### Phase 11: 配布・インストーラー ✓ 完了
+
+- `install.sh` によるインストーラー
+  - バイナリを `$PREFIX/bin` へ配置（既定: `~/.local/bin`）
+  - 初期設定ファイルをXDG Base Directoryに従って配置（既存設定は保持）
+  - プラグイン・データディレクトリの作成
+  - アンインストール（`--uninstall` / `--purge`）
+- `Makefile` による `make install` / `make uninstall`
 
 ## ライセンス
 
