@@ -48,6 +48,8 @@ pub fn parse_action(action_name: &str) -> Option<Action> {
         "open_with_editor" | "edit" => Some(Action::OpenWithEditor),
         "open_with_pager" | "view" => Some(Action::OpenWithPager),
         "execute_file" | "execute" => Some(Action::ExecuteFile),
+        "sync_dir_from_other" | "sync_from_other" => Some(Action::SyncDirFromOther),
+        "sync_dir_to_other" | "sync_to_other" => Some(Action::SyncDirToOther),
         "command_mode" => Some(Action::CommandMode),
         "execute_command" => Some(Action::ExecuteCommand),
         "edit_config" | "config" => Some(Action::EditConfig),

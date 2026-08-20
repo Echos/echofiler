@@ -35,6 +35,8 @@
 "<C-h>" = "focus_left"
 "<C-l>" = "focus_right"
 "Tab" = "toggle_pane"
+"o" = "sync_dir_from_other"  # もう一方のペインと同じディレクトリへ移動
+"O" = "sync_dir_to_other"    # 自分のディレクトリをもう一方のペインにも適用
 
 # 選択
 "Space" = "toggle_select"
@@ -51,7 +53,6 @@
 "a" = "create"
 "e" = "extract_archive"
 "z" = "compress_to_zip"
-"o" = "open_file"
 "E" = "open_with_editor"
 "w" = "open_with_pager"
 "X" = "execute_file"
@@ -82,6 +83,10 @@
 ":" = "command_mode"
 "q" = "quit"
 "?" = "help"
+
+# 既定では未割り当てのアクション（任意のキーに割り当てられる）
+# "open_file" は Enter でも実行される（ディレクトリなら移動、ファイルならオープナーで開く）
+# "<C-o>" = "open_file"
 
 # 未実装のアクション（割り当てても何も起きない）
 # "g g" = "cursor_top"

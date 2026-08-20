@@ -109,6 +109,22 @@ impl App {
         }
     }
 
+    /// アクティブでない側のペイン
+    pub fn inactive_pane(&self) -> &Pane {
+        match self.active_pane {
+            PaneSide::Left => &self.right_pane,
+            PaneSide::Right => &self.left_pane,
+        }
+    }
+
+    /// アクティブでない側のペイン（可変）
+    pub fn inactive_pane_mut(&mut self) -> &mut Pane {
+        match self.active_pane {
+            PaneSide::Left => &mut self.right_pane,
+            PaneSide::Right => &mut self.left_pane,
+        }
+    }
+
     pub fn handle_key(&mut self, key: Key) -> Action {
         use crate::config::keymap::KeymapConfig;
 
@@ -222,7 +238,8 @@ impl App {
             KeyCode::Char('?') => Action::ShowHelp,
             KeyCode::Char('e') => Action::ExtractArchive,
             KeyCode::Char('z') => Action::CompressToZip,
-            KeyCode::Char('o') => Action::OpenFile,
+            KeyCode::Char('o') => Action::SyncDirFromOther,
+            KeyCode::Char('O') => Action::SyncDirToOther,
             KeyCode::Char('C') => Action::CopyToOtherPane,
             KeyCode::Char('M') => Action::MoveToOtherPane,
             KeyCode::Char('E') => Action::OpenWithEditor,
@@ -672,6 +689,12 @@ impl App {
             }
             Action::ExecuteFile => {
                 self.execute_current_file();
+            }
+            Action::SyncDirFromOther => {
+                self.sync_dir_from_other();
+            }
+            Action::SyncDirToOther => {
+                self.sync_dir_to_other();
             }
             Action::CommandMode => {
                 self.command_prompt = String::new();
@@ -1193,6 +1216,32 @@ impl App {
             self.active_pane,
         );
         let _ = session.save();
+    }
+
+    /// もう一方のペインのディレクトリをアクティブペインに反映する（oキー）
+    fn sync_dir_from_other(&mut self) {
+        let source = self.inactive_pane().current_tab().cwd.clone();
+
+        if self.active_pane().current_tab().cwd == source {
+            self.status_message = "Both panes are already in the same directory".to_string();
+            return;
+        }
+
+        self.active_pane_mut().current_tab_mut().navigate_to(source.clone());
+        self.status_message = format!("Synced from other pane: {}", source.display());
+    }
+
+    /// アクティブペインのディレクトリをもう一方のペインに反映する（Oキー）
+    fn sync_dir_to_other(&mut self) {
+        let source = self.active_pane().current_tab().cwd.clone();
+
+        if self.inactive_pane().current_tab().cwd == source {
+            self.status_message = "Both panes are already in the same directory".to_string();
+            return;
+        }
+
+        self.inactive_pane_mut().current_tab_mut().navigate_to(source.clone());
+        self.status_message = format!("Applied to other pane: {}", source.display());
     }
 
     /// ファイルを設定されたオープナーで開く

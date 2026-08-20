@@ -166,17 +166,31 @@ impl Tab {
         }
     }
 
+    /// 指定したディレクトリへ移動する
+    ///
+    /// カーソル・スクロール・選択はいずれもディレクトリ内の位置に依存する状態なので
+    /// リセットする。特に選択はインデックスの集合なので持ち越すと別のファイルを指してしまう。
+    pub fn navigate_to(&mut self, path: PathBuf) {
+        self.cwd = path;
+        self.cursor = 0;
+        self.scroll_offset = 0;
+        self.selection.clear();
+        self.reload();
+    }
+
     pub fn enter(&mut self) -> bool {
-        if let Some(entry) = self.current_entry() {
-            if entry.is_dir {
-                self.cwd = entry.path.clone();
-                self.cursor = 0;
-                self.scroll_offset = 0;
-                self.reload();
-                return true;
+        let target = self
+            .current_entry()
+            .filter(|entry| entry.is_dir)
+            .map(|entry| entry.path.clone());
+
+        match target {
+            Some(path) => {
+                self.navigate_to(path);
+                true
             }
+            None => false,
         }
-        false
     }
 
     pub fn parent(&mut self) -> bool {
@@ -189,6 +203,7 @@ impl Tab {
             self.cwd = parent.to_path_buf();
             self.cursor = 0;
             self.scroll_offset = 0;
+            self.selection.clear();
             self.reload();
 
             // 元いたディレクトリを探してカーソルを合わせる
@@ -395,6 +410,25 @@ mod tests {
             tab.clear_selection();
             assert_eq!(tab.selection.len(), 0);
         }
+    }
+
+    #[test]
+    fn test_navigate_to_resets_position_and_selection() {
+        let dir = std::env::temp_dir();
+        let mut tab = Tab::with_show_hidden(dir.clone(), true);
+
+        tab.cursor = 1;
+        tab.scroll_offset = 1;
+        tab.selection.insert(0);
+
+        tab.navigate_to(PathBuf::from("/"));
+
+        assert_eq!(tab.cwd, PathBuf::from("/"));
+        assert_eq!(tab.cursor, 0);
+        assert_eq!(tab.scroll_offset, 0);
+        // インデックスの集合なので持ち越すと別のファイルを指してしまう
+        assert!(tab.selection.is_empty());
+        assert!(!tab.entries.is_empty());
     }
 
     #[test]

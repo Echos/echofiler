@@ -44,6 +44,8 @@ impl<'a> HelpWidget<'a> {
         lines.push(Line::from("  Tab           Toggle active pane"));
         lines.push(Line::from("  ← / Ctrl+h    Focus left pane"));
         lines.push(Line::from("  → / Ctrl+l    Focus right pane"));
+        lines.push(Line::from("  o             Go to the other pane's directory"));
+        lines.push(Line::from("  O             Apply this directory to the other pane"));
         lines.push(Line::from(""));
 
         // ファイル選択
@@ -78,7 +80,7 @@ impl<'a> HelpWidget<'a> {
             "[ Open Files ]",
             Style::default().add_modifier(ratatui::style::Modifier::BOLD),
         )));
-        lines.push(Line::from("  o             Open file with default application"));
+        lines.push(Line::from("  Enter         Open file with default application"));
         lines.push(Line::from("  E             Open file with editor ($EDITOR)"));
         lines.push(Line::from("  w             Open file with pager ($PAGER)"));
         lines.push(Line::from("  X             Execute file"));

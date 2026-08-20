@@ -45,6 +45,8 @@ pub enum Action {
     OpenWithEditor,
     OpenWithPager,
     ExecuteFile,
+    SyncDirFromOther,
+    SyncDirToOther,
     CommandMode,
     ExecuteCommand,
     EditConfig,
