@@ -658,6 +658,16 @@ impl App {
             Action::ExecuteFile => {
                 self.execute_current_file();
             }
+            Action::CommandMode => {
+                self.command_prompt = String::new();
+                self.command_input = ":".to_string();
+                self.mode = InputMode::Command;
+            }
+            Action::ExecuteCommand => {
+                let input = std::mem::take(&mut self.command_input);
+                self.execute_command(&input);
+                self.mode = InputMode::Normal;
+            }
             Action::EditConfig => {
                 self.edit_config_file();
             }

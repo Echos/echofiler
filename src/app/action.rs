@@ -45,6 +45,8 @@ pub enum Action {
     OpenWithEditor,
     OpenWithPager,
     ExecuteFile,
+    CommandMode,
+    ExecuteCommand,
     EditConfig,
     EditKeymap,
     EditTheme,

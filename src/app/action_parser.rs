@@ -48,6 +48,8 @@ pub fn parse_action(action_name: &str) -> Option<Action> {
         "open_with_editor" | "edit" => Some(Action::OpenWithEditor),
         "open_with_pager" | "view" => Some(Action::OpenWithPager),
         "execute_file" | "execute" => Some(Action::ExecuteFile),
+        "command_mode" => Some(Action::CommandMode),
+        "execute_command" => Some(Action::ExecuteCommand),
         "edit_config" | "config" => Some(Action::EditConfig),
         "edit_keymap" | "keymap" => Some(Action::EditKeymap),
         "edit_theme" | "theme" => Some(Action::EditTheme),

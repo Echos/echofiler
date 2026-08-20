@@ -30,6 +30,8 @@ impl Key {
     /// キーをキーマップ用の文字列表記に変換
     pub fn to_keymap_string(&self) -> String {
         let key_str = match self.code {
+            // スペースは " " ではなく "Space" と表記する（keymap.tomlでの可読性のため）
+            KeyCode::Char(' ') => "Space".to_string(),
             KeyCode::Char(c) => c.to_string(),
             KeyCode::Enter => "Enter".to_string(),
             KeyCode::Esc => "Escape".to_string(),
@@ -54,8 +56,10 @@ impl Key {
             format!("<C-{}>", key_str)
         } else if self.modifiers.contains(KeyModifiers::ALT) {
             format!("<A-{}>", key_str)
-        } else if self.modifiers.contains(KeyModifiers::SHIFT) && matches!(self.code, KeyCode::Char(_)) {
-            // Shiftは大文字で表現（Charの場合のみ）
+        } else if self.modifiers.contains(KeyModifiers::SHIFT)
+            && matches!(self.code, KeyCode::Char(c) if c != ' ')
+        {
+            // Shiftは大文字で表現（Charの場合のみ。Spaceは "SPACE" にしない）
             key_str.to_uppercase()
         } else {
             key_str
@@ -93,6 +97,20 @@ mod tests {
     fn test_to_keymap_string_simple_char() {
         let key = Key::char('j');
         assert_eq!(key.to_keymap_string(), "j");
+    }
+
+    #[test]
+    fn test_to_keymap_string_space() {
+        // keymap.toml では "Space" と書けるようにする
+        assert_eq!(Key::char(' ').to_keymap_string(), "Space");
+        assert_eq!(
+            Key::new(KeyCode::Char(' '), KeyModifiers::SHIFT).to_keymap_string(),
+            "Space"
+        );
+        assert_eq!(
+            Key::new(KeyCode::Char(' '), KeyModifiers::CONTROL).to_keymap_string(),
+            "<C-Space>"
+        );
     }
 
     #[test]

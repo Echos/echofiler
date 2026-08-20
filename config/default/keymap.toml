@@ -1,4 +1,14 @@
 # echofiler キーマップ設定
+#
+# 記法:
+#   "j" = "cursor_down"       単一キー
+#   "G" = "cursor_bottom"     Shift付きは大文字で表記
+#   "<C-t>" = "new_tab"       修飾キー付き (<C-x> = Ctrl, <A-x> = Alt)
+#   "Space" = "..."           特殊キー (Space / Enter / Escape / Tab / Backspace / Up / Down / ...)
+#   "g" = "<bm_prefix>"       特殊ワード (<...>) を割り当てるとプレフィックスキーになる
+#   "<bm_prefix> b" = "..."   プレフィックスキー + 次のキー
+#
+# 複数キーの連続入力は特殊ワードによるプレフィックスのみ対応する ("y y" のような記法は使えない)
 
 [normal]
 # カーソル移動
@@ -6,45 +16,38 @@
 "k" = "cursor_up"
 "Down" = "cursor_down"
 "Up" = "cursor_up"
-"g g" = "cursor_top"
-"G" = "cursor_bottom"
-"H" = "cursor_page_up"
-"L" = "cursor_page_down"
 
 # ディレクトリ移動
 "Enter" = "enter"
 "Backspace" = "parent_dir"
 
 # タブ操作
+"h" = "prev_tab"
+"l" = "next_tab"
 "[" = "prev_tab"
 "]" = "next_tab"
 "<C-t>" = "new_tab"
 "<C-w>" = "close_tab"
 
 # ペイン操作
-"h" = "focus_left"
-"l" = "focus_right"
 "Left" = "focus_left"
 "Right" = "focus_right"
-"Tab" = "toggle_pane"
 "<C-h>" = "focus_left"
 "<C-l>" = "focus_right"
+"Tab" = "toggle_pane"
 
 # 選択
 "Space" = "toggle_select"
 "v" = "visual_mode"
-"V" = "visual_line"
-"<C-a>" = "select_all"
 
 # ファイル操作
-"y y" = "yank"
-"d d" = "cut"
+"y" = "yank"
+"d" = "cut"
 "p" = "paste"
-"P" = "paste_overwrite"
 "D" = "delete"
-"c" = "copy_to_other_pane"
-"m" = "move_to_other_pane"
-"r" = "rename"
+"C" = "copy_to_other_pane"
+"M" = "move_to_other_pane"
+"R" = "rename"
 "a" = "create"
 "e" = "extract_archive"
 "z" = "compress_to_zip"
@@ -59,19 +62,35 @@
 "n" = "search_next"
 "N" = "search_prev"
 
+# 表示
+"P" = "toggle_preview"
+"i" = "toggle_sidebar"
+"." = "toggle_hidden"
+"s" = "cycle_sort_method"
+"S" = "toggle_sort_reverse"
+"r" = "refresh"
+
 # ブックマーク（プレフィックスキー: g）
 # 特殊ワード: <bm_prefix>
 "g" = "<bm_prefix>"  # gキーでブックマークプレフィックスモードに入る
-"<bm_prefix> a" = "add_bookmark"  # g b: ブックマーク追加
+"<bm_prefix> b" = "add_bookmark"  # g b: ブックマーク追加
 "<bm_prefix> B" = "show_bookmarks"  # g B: 全ブックマーク一覧
 "<bm_prefix> m" = "show_bookmark_select"  # g m: キー付きブックマーク一覧
 # <bm_prefix> + その他のキー: そのキーに登録されたブックマークへジャンプ（デフォルト動作）
 
 # その他
 ":" = "command_mode"
-"." = "toggle_hidden"
 "q" = "quit"
 "?" = "help"
+
+# 未実装のアクション（割り当てても何も起きない）
+# "g g" = "cursor_top"
+# "G" = "cursor_bottom"
+# "H" = "cursor_page_up"
+# "L" = "cursor_page_down"
+# "V" = "visual_line"
+# "<C-a>" = "select_all"
+# "P" = "paste_overwrite"
 
 [visual]
 "Escape" = "normal_mode"
@@ -82,4 +101,4 @@
 [command]
 "Escape" = "normal_mode"
 "Enter" = "execute_command"
-"<C-c>" = "cancel"
+# "<C-c>" = "cancel"  # 未実装（Escapeでキャンセル）
